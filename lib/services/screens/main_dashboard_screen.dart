@@ -1,56 +1,46 @@
 // Import necessary Flutter and package dependencies
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:image_picker/image_picker.dart'; // ADD: image picker
-import 'dart:io'; // ADD: for File
+import 'package:image_picker/image_picker.dart';
+import 'dart:io';
 
-// Import providers for state management
 import '../providers/dashboard_provider.dart';
 import '../providers/user_provider.dart';
-import '../providers/allergies_provider.dart'; // ADD: for setting username
-import '../providers/demographics_provider.dart'; // ADD: for setting username
-import '../providers/immunizations_provider.dart'; // ADD: for setting username
-import '../providers/medication_provider.dart'; // ADD: for setting username
-import '../providers/problem_list_provider.dart'; // ADD: for setting username
-import '../providers/procedures_provider.dart'; // ADD: for setting username
+import '../providers/allergies_provider.dart';
+import '../providers/demographics_provider.dart';
+import '../providers/immunizations_provider.dart';
+import '../providers/medication_provider.dart';
+import '../providers/problem_list_provider.dart';
+import '../providers/procedures_provider.dart';
 
-// ADD: Import services
 import '../api_service.dart';
 import '../auth_service.dart';
 import '../health_record_service.dart';
 
-// Import widgets
 import '../widgets/dashboard_item_tile.dart';
 import '../widgets/user_info_card.dart';
 
-// Import utility enums
 import '../utils/menu_items.dart';
 
-// Import screen navigations
 import 'demographics_screen.dart';
 import 'allergies_screen.dart';
 import 'immunizations_screen.dart';
 import 'medication_screen.dart';
 import 'problem_list_screen.dart';
 import 'procedures_screen.dart';
-import 'login_screen.dart'; // ADD: login screen
-import 'view_records_screen.dart'; // ADD: view records screen
+import 'login_screen.dart';
+import 'view_records_screen.dart';
 
-// MainDashboardScreen is a stateful widget to manage screen-specific state
 class MainDashboardScreen extends StatefulWidget {
-  final String username; // ADD: username parameter
+  final String username;
 
-  // CHANGE: Constructor to require username
   const MainDashboardScreen({super.key, required this.username});
 
-  // Create the mutable state for this widget
   @override
   _MainDashboardScreenState createState() => _MainDashboardScreenState();
 }
 
-// State class for MainDashboardScreen
 class _MainDashboardScreenState extends State<MainDashboardScreen> {
-  // ADD: New fields for quote and image functionality
   String quote = 'Loading...';
   File? _image;
   String selectedCategory = 'Allergies';
@@ -64,21 +54,16 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> {
     'Procedures'
   ];
 
-  // Lifecycle method called when the state object is inserted into the widget tree
   @override
   void initState() {
     super.initState();
-
-    // Use WidgetsBinding to ensure the widget is built before fetching data
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      // Load initial data for the dashboard
       _loadInitialData();
-      _setUsernameInProviders(); // ADD: Set username for all providers
+      _setUsernameInProviders();
     });
-    _loadQuote(); // ADD: Load quote
+    _loadQuote();
   }
 
-  // ADD: Method to set username in all providers
   void _setUsernameInProviders() {
     Provider.of<AllergiesProvider>(context, listen: false).setUsername(widget.username);
     Provider.of<DemographicsProvider>(context, listen: false).setUsername(widget.username);
@@ -89,7 +74,6 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> {
     Provider.of<UserProvider>(context, listen: false).setLoggedInUser(widget.username);
   }
 
-  // ADD: Method to load quote
   Future<void> _loadQuote() async {
     try {
       final newQuote = await ApiService.getRandomQuote();
@@ -103,18 +87,12 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> {
     }
   }
 
-  // Method to load initial data from providers
   void _loadInitialData() {
-    // Fetch user information without listening to changes
     Provider.of<UserProvider>(context, listen: false).fetchUserInfo();
-
-    // CHANGE: Pass username to fetchDashboardItems
     Provider.of<DashboardProvider>(context, listen: false).fetchDashboardItems(context, widget.username);
   }
 
-  // CHANGE: Update navigation to pass username
   void _navigateToScreen(MenuItems item) {
-    // Select the appropriate screen based on the menu item
     Widget screen;
     switch (item) {
       case MenuItems.demographics:
@@ -139,7 +117,6 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> {
         return;
     }
 
-    // Navigate to the selected screen
     Navigator.push(
       context,
       MaterialPageRoute(builder: (context) => screen),
@@ -148,25 +125,20 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // Define the primary color for the app
-    final welcomeBlue = Color(0xFF10c9b7);
+    final welcomeBlue = const Color(0xFF10c9b7);
 
     return Scaffold(
-      // App bar with custom title design
       appBar: AppBar(
         title: Container(
-          // Decorative container for the title
           decoration: BoxDecoration(
-            color: const Color(0xFF10c9b7).withOpacity(0.1),
+            color: welcomeBlue.withOpacity(0.1),
             borderRadius: BorderRadius.circular(30),
           ),
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
           child: RichText(
-            // Rich text to style different parts of the title
             text: TextSpan(
               style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
               children: [
-                // "My" in a distinct color and larger size
                 TextSpan(
                   text: 'My ',
                   style: TextStyle(
@@ -175,7 +147,6 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> {
                     fontWeight: FontWeight.w900,
                   ),
                 ),
-                // Rest of the title
                 const TextSpan(
                   text: 'Health Dashboard',
                   style: TextStyle(
@@ -187,7 +158,6 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> {
             ),
           ),
         ),
-        // ADD: Sign out button
         actions: [
           Padding(
             padding: const EdgeInsets.all(8.0),
@@ -202,16 +172,16 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> {
                     context: context,
                     builder: (BuildContext context) {
                       return AlertDialog(
-                        title: Text('Sign Out'),
-                        content: Text('Are you sure you want to sign out?'),
+                        title: const Text('Sign Out'),
+                        content: const Text('Are you sure you want to sign out?'),
                         actions: [
                           TextButton(
                             onPressed: () => Navigator.of(context).pop(false),
-                            child: Text('Cancel'),
+                            child: const Text('Cancel'),
                           ),
                           TextButton(
                             onPressed: () => Navigator.of(context).pop(true),
-                            child: Text('Sign Out'),
+                            child: const Text('Sign Out'),
                           ),
                         ],
                       );
@@ -219,15 +189,16 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> {
                   );
 
                   if (confirm == true) {
-                    await AuthService.clearCredentials();
+                    // UPDATED: Use AuthService.logout instead of clearCredentials
+                    await AuthService.logout();
                     Navigator.pushAndRemoveUntil(
                       context,
-                      MaterialPageRoute(builder: (context) => LoginScreen()),
+                      MaterialPageRoute(builder: (context) => const LoginScreen()),
                           (route) => false,
                     );
                   }
                 },
-                child: Text(
+                child: const Text(
                   'Sign Out',
                   style: TextStyle(
                     color: Colors.white,
@@ -245,120 +216,103 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> {
           ),
         ],
       ),
-
-      // CHANGE: Add RefreshIndicator for quote
       body: RefreshIndicator(
         onRefresh: _loadQuote,
         child: CustomScrollView(
-            slivers: [
-        // ADD: Quote Card
-        SliverToBoxAdapter(
-        child: Card(
-        margin: EdgeInsets.all(16.0),
-        elevation: 4,
-        child: Padding(
-          padding: EdgeInsets.all(16.0),
-          child: Column(
-            children: [
-              Text(
-                'Daily Quote',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              SizedBox(height: 8),
-              Text(
-                quote,
-                style: TextStyle(
-                  fontSize: 16,
-                  fontStyle: FontStyle.italic,
-                ),
-                textAlign: TextAlign.center,
-              ),
-              SizedBox(height: 8),
-              TextButton.icon(
-                onPressed: _loadQuote,
-                icon: Icon(Icons.refresh),
-                label: Text('New Quote'),
-              ),
-            ],
-          ),
-        ),
-      ),
-    ),
-
-              // Welcome message using Selector for efficient updates
-              SliverToBoxAdapter(
-                child: Selector<UserProvider, String>(
-                  selector: (context, userProvider) =>
-                  userProvider.currentUser?.firstName ?? widget.username, // CHANGE: use widget.username as fallback
-                  builder: (context, firstName, child) {
-                    return Padding(
-                      padding: const EdgeInsets.all(8.0),
-                      child: Text(
-                        'Welcome, $firstName',
+          slivers: [
+            SliverToBoxAdapter(
+              child: Card(
+                margin: const EdgeInsets.all(16.0),
+                elevation: 4,
+                child: Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Column(
+                    children: [
+                      const Text(
+                        'Daily Quote',
                         style: TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.bold,
-                          color: welcomeBlue,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        quote,
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontStyle: FontStyle.italic,
                         ),
                         textAlign: TextAlign.center,
                       ),
-                    );
-                  },
+                      const SizedBox(height: 8),
+                      TextButton.icon(
+                        onPressed: _loadQuote,
+                        icon: const Icon(Icons.refresh),
+                        label: const Text('New Quote'),
+                      ),
+                    ],
+                  ),
                 ),
               ),
-
-              // User Info Card
-              const SliverToBoxAdapter(
-                child: UserInfoCard(),
-              ),
-
-              // Dashboard Items with loading and error handling
-              Consumer<DashboardProvider>(
-                builder: (context, provider, child) {
-                  // Show loading indicator while fetching data
-                  if (provider.isLoading) {
-                    return const SliverToBoxAdapter(
-                      child: Center(child: CircularProgressIndicator()),
-                    );
-                  }
-
-                  // Show error message if data fetching fails
-                  if (provider.error != null) {
-                    return SliverToBoxAdapter(
-                      child: Center(
-                        child: Text('Error: ${provider.error}'),
+            ),
+            SliverToBoxAdapter(
+              child: Selector<UserProvider, String>(
+                selector: (context, userProvider) =>
+                userProvider.currentUser?.firstName ?? widget.username,
+                builder: (context, firstName, child) {
+                  return Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: Text(
+                      'Welcome, $firstName',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: welcomeBlue,
                       ),
-                    );
-                  }
-
-                  // Create a scrollable list of dashboard items
-                  return SliverList(
-                    delegate: SliverChildBuilderDelegate(
-                          (context, index) {
-                        final item = provider.dashboardItems[index];
-                        return DashboardItemTile(
-                          item: item,
-                          username: widget.username, // ADD: pass username
-                        );
-                      },
-                      childCount: provider.dashboardItems.length,
+                      textAlign: TextAlign.center,
                     ),
                   );
                 },
               ),
-            ],
+            ),
+            const SliverToBoxAdapter(
+              child: UserInfoCard(),
+            ),
+            Consumer<DashboardProvider>(
+              builder: (context, provider, child) {
+                if (provider.isLoading) {
+                  return const SliverToBoxAdapter(
+                    child: Center(child: CircularProgressIndicator()),
+                  );
+                }
+                if (provider.error != null) {
+                  return SliverToBoxAdapter(
+                    child: Center(
+                      child: Text('Error: ${provider.error}'),
+                    ),
+                  );
+                }
+                return SliverList(
+                  delegate: SliverChildBuilderDelegate(
+                        (context, index) {
+                      final item = provider.dashboardItems[index];
+                      return DashboardItemTile(
+                        item: item,
+                        username: widget.username,
+                      );
+                    },
+                    childCount: provider.dashboardItems.length,
+                  ),
+                );
+              },
+            ),
+          ],
         ),
       ),
-
-      // End drawer for navigation
       endDrawer: Drawer(
         child: ListView(
           padding: EdgeInsets.zero,
           children: [
-            // Drawer header
             DrawerHeader(
               decoration: BoxDecoration(
                 color: welcomeBlue,
@@ -376,7 +330,7 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> {
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    'Logged in as: ${widget.username}', // ADD: show username
+                    'Logged in as: ${widget.username}',
                     style: const TextStyle(
                       color: Colors.white70,
                       fontSize: 14,
@@ -385,42 +339,34 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> {
                 ],
               ),
             ),
-            // Drawer menu items
             _buildDrawerItem(
                 icon: Icons.person,
                 title: 'Demographics',
-                item: MenuItems.demographics
-            ),
+                item: MenuItems.demographics),
             _buildDrawerItem(
                 icon: Icons.warning,
                 title: 'Allergies',
-                item: MenuItems.allergies
-            ),
+                item: MenuItems.allergies),
             _buildDrawerItem(
                 icon: Icons.medical_services,
                 title: 'Immunizations',
-                item: MenuItems.immunizations
-            ),
+                item: MenuItems.immunizations),
             _buildDrawerItem(
                 icon: Icons.medication,
                 title: 'Medication',
-                item: MenuItems.medication
-            ),
+                item: MenuItems.medication),
             _buildDrawerItem(
                 icon: Icons.list,
                 title: 'Problem List',
-                item: MenuItems.problemList
-            ),
+                item: MenuItems.problemList),
             _buildDrawerItem(
                 icon: Icons.medical_information,
                 title: 'Procedures',
-                item: MenuItems.procedures
-            ),
-            const Divider(), // ADD: divider
-            // ADD: View Health Records
+                item: MenuItems.procedures),
+            const Divider(),
             ListTile(
-              leading: Icon(Icons.photo_library),
-              title: Text('View Health Records'),
+              leading: const Icon(Icons.photo_library),
+              title: const Text('View Health Records'),
               onTap: () {
                 Navigator.of(context).pop();
                 Navigator.push(
@@ -434,8 +380,6 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> {
           ],
         ),
       ),
-
-      // ADD: Floating action button for viewing records
       floatingActionButton: FloatingActionButton(
         onPressed: () {
           Navigator.push(
@@ -445,13 +389,12 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> {
             ),
           );
         },
-        child: Icon(Icons.photo_library),
+        child: const Icon(Icons.photo_library),
         tooltip: 'View Health Records',
       ),
     );
   }
 
-  // Helper method to build drawer menu items
   Widget _buildDrawerItem({
     required IconData icon,
     required String title,
@@ -461,9 +404,7 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> {
       leading: Icon(icon),
       title: Text(title),
       onTap: () {
-        // Close the drawer
         Navigator.of(context).pop();
-        // Navigate to the selected screen
         _navigateToScreen(item);
       },
     );

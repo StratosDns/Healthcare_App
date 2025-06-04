@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
-import 'login_screen.dart'; // Change from MainDashboardScreen
+import '../auth_service.dart';
+import 'login_screen.dart';
+import 'main_dashboard_screen.dart'; // Change from MainDashboardScreen
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -12,12 +14,18 @@ class _SplashScreenState extends State<SplashScreen> {
   @override
   void initState() {
     super.initState();
-    Future.delayed(const Duration(seconds: 3), () {
-      Navigator.of(context).pushReplacement(
-        MaterialPageRoute(
-          builder: (context) => LoginScreen(), // Change to LoginScreen
-        ),
-      );
+    Future.delayed(const Duration(seconds: 3), () async {
+      bool loggedIn = await AuthService.isLoggedIn();
+      String? username = await AuthService.getCurrentUser();
+      if (loggedIn && username != null && username.isNotEmpty) {
+        Navigator.of(context).pushReplacement(MaterialPageRoute(
+          builder: (context) => MainDashboardScreen(username: username),
+        ));
+      } else {
+        Navigator.of(context).pushReplacement(MaterialPageRoute(
+          builder: (context) => LoginScreen(),
+        ));
+      }
     });
   }
 

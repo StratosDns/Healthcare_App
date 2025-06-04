@@ -1,69 +1,50 @@
-// services/auth_service.dart
 import 'package:shared_preferences/shared_preferences.dart';
+import 'dart:convert';
 
 class AuthService {
-  static const String _usernameKey = 'username';
-  static const String _passwordKey = 'password';
+  static const String _usersKey = 'users'; // JSON map of users
+  static const String _currentUserKey = 'currentUser';
   static const String _isLoggedInKey = 'isLoggedIn';
 
-  // Save user credentials
-  static Future<void> saveCredentials(String username, String password) async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setString(_usernameKey, username);
-      await prefs.setString(_passwordKey, password);
+  static Future<void> registerUser(String username, String password) async {
+    final prefs = await SharedPreferences.getInstance();
+    Map<String, dynamic> users = {};
+
+    final usersString = prefs.getString(_usersKey);
+    if (usersString != null && usersString.isNotEmpty) {
+      users = json.decode(usersString);
+    }
+
+    users[username] = password;
+    await prefs.setString(_usersKey, json.encode(users));
+  }
+
+  static Future<bool> loginUser(String username, String password) async {
+    final prefs = await SharedPreferences.getInstance();
+    final usersString = prefs.getString(_usersKey);
+    if (usersString == null) return false;
+    final users = json.decode(usersString);
+    if (users[username] == password) {
+      await prefs.setString(_currentUserKey, username);
       await prefs.setBool(_isLoggedInKey, true);
-
-      // Verify saved credentials
-      final savedUsername = prefs.getString(_usernameKey);
-      final savedPassword = prefs.getString(_passwordKey);
-      print('Credentials saved - Username: $savedUsername, Password: $savedPassword');
-    } catch (e) {
-      print('Error saving credentials: $e');
+      return true;
     }
+    return false;
   }
 
-  // Get saved credentials
-  static Future<Map<String, String>> getCredentials() async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      final username = prefs.getString(_usernameKey) ?? '';
-      final password = prefs.getString(_passwordKey) ?? '';
-
-      print('Retrieved credentials - Username: $username, Password: $password');
-
-      return {
-        'username': username,
-        'password': password,
-      };
-    } catch (e) {
-      print('Error getting credentials: $e');
-      return {
-        'username': '',
-        'password': '',
-      };
-    }
+  static Future<String?> getCurrentUser() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString(_currentUserKey);
   }
 
-  // Clear credentials (for logout)
-  static Future<void> clearCredentials() async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setBool(_isLoggedInKey, false);
-      print('Logged out successfully');
-    } catch (e) {
-      print('Error during logout: $e');
-    }
+  static Future<void> logout() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_isLoggedInKey, false);
+    await prefs.remove(_currentUserKey);
   }
 
-  // Check if user is logged in
   static Future<bool> isLoggedIn() async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      return prefs.getBool(_isLoggedInKey) ?? false;
-    } catch (e) {
-      print('Error checking login status: $e');
-      return false;
-    }
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getBool(_isLoggedInKey) ?? false;
   }
 }

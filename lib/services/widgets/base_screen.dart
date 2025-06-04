@@ -1,10 +1,6 @@
-// Import necessary Flutter and app-specific dependencies
 import 'package:flutter/material.dart';
 
-// Import menu items enum for navigation
 import '../utils/menu_items.dart';
-
-// Import all screens for navigation
 import '../screens/main_dashboard_screen.dart';
 import '../screens/demographics_screen.dart';
 import '../screens/allergies_screen.dart';
@@ -15,22 +11,12 @@ import '../screens/procedures_screen.dart';
 import '../screens/login_screen.dart';
 import '../auth_service.dart';
 
-// BaseScreen is a stateless widget that provides a consistent layout
-// and navigation structure for all screens in the application
 class BaseScreen extends StatelessWidget {
-  // Title of the current screen
   final String title;
-
-  // Main content of the screen
   final Widget body;
-
-  // Optional floating action button
   final Widget? floatingActionButton;
-
-  // Username for the current user
   final String username;
 
-  // Constructor with named parameters
   const BaseScreen({
     super.key,
     required this.title,
@@ -39,16 +25,12 @@ class BaseScreen extends StatelessWidget {
     this.floatingActionButton,
   });
 
-  // Method to handle navigation between screens
   void _navigateToScreen(BuildContext context, MenuItems item) {
-    // Close the drawer before navigation
     Navigator.of(context).pop();
 
-    // Select the appropriate screen based on the menu item
     Widget screen;
     switch (item) {
       case MenuItems.home:
-      // Special handling for home screen
         Navigator.pushAndRemoveUntil(
           context,
           MaterialPageRoute(
@@ -78,7 +60,6 @@ class BaseScreen extends StatelessWidget {
         break;
     }
 
-    // Navigate to the selected screen
     Navigator.pushReplacement(
       context,
       MaterialPageRoute(
@@ -90,16 +71,11 @@ class BaseScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Define the primary color for the app
-    final welcomeBlue = Color(0xFF10c9b7);
+    final welcomeBlue = const Color(0xFF10c9b7);
 
     return Scaffold(
-      // App bar with custom title design
       appBar: AppBar(
-        // Removes the default back button
         automaticallyImplyLeading: false,
-
-        // Custom title with a pill-shaped container
         title: Container(
           decoration: BoxDecoration(
             color: Colors.blue.shade50,
@@ -129,11 +105,8 @@ class BaseScreen extends StatelessWidget {
             ),
           ),
         ),
-
-        // Actions including sign out button
         actions: [
-          // Sign out button
-          if (title != 'Login') // Don't show on login screen
+          if (title != 'Login')
             Padding(
               padding: const EdgeInsets.all(8.0),
               child: Container(
@@ -164,10 +137,11 @@ class BaseScreen extends StatelessWidget {
                     );
 
                     if (confirm == true) {
-                      await AuthService.clearCredentials();
+                      // UPDATED: Use AuthService.logout for multi-user support
+                      await AuthService.logout();
                       Navigator.pushAndRemoveUntil(
                         context,
-                        MaterialPageRoute(builder: (context) => LoginScreen()),
+                        MaterialPageRoute(builder: (context) => const LoginScreen()),
                             (route) => false,
                       );
                     }
@@ -182,7 +156,6 @@ class BaseScreen extends StatelessWidget {
                 ),
               ),
             ),
-          // Menu button
           Builder(
             builder: (context) => IconButton(
               icon: const Icon(Icons.menu),
@@ -191,19 +164,12 @@ class BaseScreen extends StatelessWidget {
           ),
         ],
       ),
-
-      // Main content of the screen
       body: body,
-
-      // Optional floating action button
       floatingActionButton: floatingActionButton,
-
-      // End drawer for navigation
       endDrawer: Drawer(
         child: ListView(
           padding: EdgeInsets.zero,
           children: [
-            // Drawer header
             DrawerHeader(
               decoration: BoxDecoration(
                 color: welcomeBlue,
@@ -230,8 +196,6 @@ class BaseScreen extends StatelessWidget {
                 ],
               ),
             ),
-
-            // Drawer menu items
             _buildDrawerItem(
               context,
               icon: Icons.home,
@@ -280,7 +244,6 @@ class BaseScreen extends StatelessWidget {
     );
   }
 
-  // Helper method to build drawer menu items
   Widget _buildDrawerItem(
       BuildContext context, {
         required IconData icon,
