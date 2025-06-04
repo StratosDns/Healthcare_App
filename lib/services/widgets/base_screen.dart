@@ -12,33 +12,34 @@ import '../screens/immunizations_screen.dart';
 import '../screens/medication_screen.dart';
 import '../screens/problem_list_screen.dart';
 import '../screens/procedures_screen.dart';
+import '../screens/login_screen.dart';
+import '../auth_service.dart';
 
 // BaseScreen is a stateless widget that provides a consistent layout
 // and navigation structure for all screens in the application
 class BaseScreen extends StatelessWidget {
   // Title of the current screen
-  // Displayed in the app bar
   final String title;
 
   // Main content of the screen
   final Widget body;
 
   // Optional floating action button
-  // Allows customization of screens that might need additional actions
   final Widget? floatingActionButton;
 
+  // Username for the current user
+  final String username;
+
   // Constructor with named parameters
-  // 'required' ensures title and body are provided
-  // 'floatingActionButton' is optional
   const BaseScreen({
     super.key,
     required this.title,
     required this.body,
+    required this.username,
     this.floatingActionButton,
   });
 
   // Method to handle navigation between screens
-  // Closes the drawer and navigates to the selected screen
   void _navigateToScreen(BuildContext context, MenuItems item) {
     // Close the drawer before navigation
     Navigator.of(context).pop();
@@ -48,41 +49,42 @@ class BaseScreen extends StatelessWidget {
     switch (item) {
       case MenuItems.home:
       // Special handling for home screen
-      // Uses pushAndRemoveUntil to clear the navigation stack
         Navigator.pushAndRemoveUntil(
           context,
           MaterialPageRoute(
-            builder: (context) => const MainDashboardScreen(),
-            settings: const RouteSettings(name: '/'),
+            builder: (context) => MainDashboardScreen(username: username),
+            settings: RouteSettings(name: '/', arguments: {'username': username}),
           ),
               (route) => false,
         );
         return;
-    // Cases for other menu items
       case MenuItems.demographics:
-        screen = const DemographicsScreen();
+        screen = DemographicsScreen(username: username);
         break;
       case MenuItems.allergies:
-        screen = const AllergiesScreen();
+        screen = AllergiesScreen(username: username);
         break;
       case MenuItems.immunizations:
-        screen = const ImmunizationsScreen();
+        screen = ImmunizationsScreen(username: username);
         break;
       case MenuItems.medication:
-        screen = const MedicationScreen();
+        screen = MedicationScreen(username: username);
         break;
       case MenuItems.problemList:
-        screen = const ProblemListScreen();
+        screen = ProblemListScreen(username: username);
         break;
       case MenuItems.procedures:
-        screen = const ProceduresScreen();
+        screen = ProceduresScreen(username: username);
         break;
     }
 
-    // Navigate to the selected screen, replacing the current screen
+    // Navigate to the selected screen
     Navigator.pushReplacement(
       context,
-      MaterialPageRoute(builder: (context) => screen),
+      MaterialPageRoute(
+        builder: (context) => screen,
+        settings: RouteSettings(arguments: {'username': username}),
+      ),
     );
   }
 
@@ -105,11 +107,9 @@ class BaseScreen extends StatelessWidget {
           ),
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
           child: RichText(
-            // Rich text to style different parts of the title
             text: TextSpan(
               style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
               children: [
-                // "My" in a distinct color and larger size
                 TextSpan(
                   text: 'My ',
                   style: TextStyle(
@@ -118,7 +118,6 @@ class BaseScreen extends StatelessWidget {
                     fontWeight: FontWeight.w900,
                   ),
                 ),
-                // Dynamic screen title
                 TextSpan(
                   text: title,
                   style: const TextStyle(
@@ -131,8 +130,59 @@ class BaseScreen extends StatelessWidget {
           ),
         ),
 
-        // Menu button to open end drawer
+        // Actions including sign out button
         actions: [
+          // Sign out button
+          if (title != 'Login') // Don't show on login screen
+            Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: Container(
+                decoration: BoxDecoration(
+                  color: Colors.red[400],
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: TextButton(
+                  onPressed: () async {
+                    final bool? confirm = await showDialog<bool>(
+                      context: context,
+                      builder: (BuildContext context) {
+                        return AlertDialog(
+                          title: const Text('Sign Out'),
+                          content: const Text('Are you sure you want to sign out?'),
+                          actions: [
+                            TextButton(
+                              onPressed: () => Navigator.of(context).pop(false),
+                              child: const Text('Cancel'),
+                            ),
+                            TextButton(
+                              onPressed: () => Navigator.of(context).pop(true),
+                              child: const Text('Sign Out'),
+                            ),
+                          ],
+                        );
+                      },
+                    );
+
+                    if (confirm == true) {
+                      await AuthService.clearCredentials();
+                      Navigator.pushAndRemoveUntil(
+                        context,
+                        MaterialPageRoute(builder: (context) => LoginScreen()),
+                            (route) => false,
+                      );
+                    }
+                  },
+                  child: const Text(
+                    'Sign Out',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          // Menu button
           Builder(
             builder: (context) => IconButton(
               icon: const Icon(Icons.menu),
@@ -158,29 +208,72 @@ class BaseScreen extends StatelessWidget {
               decoration: BoxDecoration(
                 color: welcomeBlue,
               ),
-              child: const Text(
-                'Health Dashboard Menu',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 24,
-                ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  const Text(
+                    'Health Dashboard Menu',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 24,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Logged in as: $username',
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 14,
+                    ),
+                  ),
+                ],
               ),
             ),
 
             // Drawer menu items
             _buildDrawerItem(
-                context,
-                icon: Icons.home,
-                title: 'Home',
-                item: MenuItems.home
+              context,
+              icon: Icons.home,
+              title: 'Home',
+              item: MenuItems.home,
             ),
             _buildDrawerItem(
-                context,
-                icon: Icons.person,
-                title: 'Demographics',
-                item: MenuItems.demographics
+              context,
+              icon: Icons.person,
+              title: 'Demographics',
+              item: MenuItems.demographics,
             ),
-            // ... other menu items
+            _buildDrawerItem(
+              context,
+              icon: Icons.warning,
+              title: 'Allergies',
+              item: MenuItems.allergies,
+            ),
+            _buildDrawerItem(
+              context,
+              icon: Icons.medical_services,
+              title: 'Immunizations',
+              item: MenuItems.immunizations,
+            ),
+            _buildDrawerItem(
+              context,
+              icon: Icons.medication,
+              title: 'Medication',
+              item: MenuItems.medication,
+            ),
+            _buildDrawerItem(
+              context,
+              icon: Icons.list,
+              title: 'Problem List',
+              item: MenuItems.problemList,
+            ),
+            _buildDrawerItem(
+              context,
+              icon: Icons.medical_information,
+              title: 'Procedures',
+              item: MenuItems.procedures,
+            ),
           ],
         ),
       ),
@@ -201,20 +294,3 @@ class BaseScreen extends StatelessWidget {
     );
   }
 }
-
-// Key Design Patterns and Principles:
-// 1. Consistent Layout
-//    - Provides a uniform app bar and navigation drawer
-//    - Ensures a consistent user experience across screens
-//
-// 2. Flexible Screen Construction
-//    - Accepts custom body and optional floating action button
-//    - Allows for screen-specific customization
-//
-// 3. Centralized Navigation
-//    - Manages navigation logic for all screens
-//    - Uses an enum to handle different navigation targets
-//
-// 4. Responsive Design
-//    - Uses adaptive widgets and styling
-//    - Supports different screen sizes and orientations

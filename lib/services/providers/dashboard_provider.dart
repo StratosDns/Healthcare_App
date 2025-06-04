@@ -17,15 +17,30 @@ class DashboardProvider with ChangeNotifier {
   List<DashboardItemModel> _dashboardItems = [];
   bool _isLoading = false;
   String? _error;
+  String? _username; // ADD: username field
 
   List<DashboardItemModel> get dashboardItems => _dashboardItems;
   bool get isLoading => _isLoading;
   String? get error => _error;
 
-  Future<void> fetchDashboardItems(BuildContext context) async {
+  // ADD: setUsername method
+  void setUsername(String username) {
+    _username = username;
+  }
+
+  // CHANGE: Add username parameter
+  Future<void> fetchDashboardItems(BuildContext context, String username) async {
     try {
+      _username = username; // Store username
       _isLoading = true;
       notifyListeners();
+
+      // Set username for all providers before fetching
+      Provider.of<AllergiesProvider>(context, listen: false).setUsername(username);
+      Provider.of<ImmunizationsProvider>(context, listen: false).setUsername(username);
+      Provider.of<MedicationProvider>(context, listen: false).setUsername(username);
+      Provider.of<ProblemListProvider>(context, listen: false).setUsername(username);
+      Provider.of<ProceduresProvider>(context, listen: false).setUsername(username);
 
       // Ensure providers have fetched their data
       await Future.wait([
@@ -50,42 +65,43 @@ class DashboardProvider with ChangeNotifier {
       print('Problem List count: $problemListCount');
       print('Procedures count: $proceduresCount');
 
+      // CHANGE: Update pageBuilder to pass username
       _dashboardItems = [
         DashboardItemModel(
           title: 'Allergies',
           icon: 'assets/images/logo.png',
           count: allergiesCount,
-          pageBuilder: () => const AllergiesScreen(),
+          pageBuilder: (username) => AllergiesScreen(username: username),
         ),
         DashboardItemModel(
           title: 'Immunizations',
           icon: 'assets/images/logo.png',
           count: immunizationsCount,
-          pageBuilder: () => const ImmunizationsScreen(),
+          pageBuilder: (username) => ImmunizationsScreen(username: username),
         ),
         DashboardItemModel(
           title: 'Medication',
           icon: 'assets/images/logo.png',
           count: medicationCount,
-          pageBuilder: () => const MedicationScreen(),
+          pageBuilder: (username) => MedicationScreen(username: username),
         ),
         DashboardItemModel(
           title: 'Problem List',
           icon: 'assets/images/logo.png',
           count: problemListCount,
-          pageBuilder: () => const ProblemListScreen(),
+          pageBuilder: (username) => ProblemListScreen(username: username),
         ),
         DashboardItemModel(
           title: 'Procedures',
           icon: 'assets/images/logo.png',
           count: proceduresCount,
-          pageBuilder: () => const ProceduresScreen(),
+          pageBuilder: (username) => ProceduresScreen(username: username),
         ),
         DashboardItemModel(
           title: 'Demographics',
           icon: 'assets/images/logo.png',
           count: 1,
-          pageBuilder: () => const DemographicsScreen(),
+          pageBuilder: (username) => DemographicsScreen(username: username),
         ),
       ];
 
@@ -93,7 +109,7 @@ class DashboardProvider with ChangeNotifier {
       _error = null;
       notifyListeners();
     } catch (e) {
-      print('Error in fetchDashboardItems: $e'); // Debug print
+      print('Error in fetchDashboardItems: $e');
       _error = e.toString();
       _isLoading = false;
       notifyListeners();

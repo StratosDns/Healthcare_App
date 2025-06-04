@@ -19,7 +19,7 @@ class DashboardItemModel {
   // A function that returns a Widget (screen)
   // Used for dynamic navigation to the corresponding screen
   // Allows for lazy loading of screens
-  final Widget Function() pageBuilder;
+  final Widget Function(String username) pageBuilder;
 
   // Const constructor with required named parameters
   // Ensures all necessary information is provided when creating a dashboard item

@@ -6,6 +6,7 @@ class ProblemListProvider with ChangeNotifier {
   List<ProblemListModel> _problemList = [];
   bool _isLoading = false;
   String? _error;
+  String? _username; // ADD: username field
 
   List<ProblemListModel> get problemList => _problemList;
   bool get isLoading => _isLoading;
@@ -13,12 +14,20 @@ class ProblemListProvider with ChangeNotifier {
 
   final ProblemListService _problemListService = ProblemListService();
 
+  // ADD: setUsername method
+  void setUsername(String username) {
+    _username = username;
+  }
+
   Future<void> fetchProblemList() async {
+    if (_username == null) return; // ADD: username check
+
     try {
       _isLoading = true;
       notifyListeners();
 
-      _problemList = await _problemListService.fetchProblemList();
+      // CHANGE: Call new method with username
+      _problemList = await _problemListService.fetchProblemListForUser(_username!);
       _isLoading = false;
       _error = null;
       notifyListeners();

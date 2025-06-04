@@ -19,6 +19,8 @@ class AllergiesProvider with ChangeNotifier {
   // Private error state to handle potential errors
   String? _error;
 
+  String? _username;
+
   // Getter for allergies list - allows read-only access
   List<AllergyModel> get allergies => _allergies;
 
@@ -27,6 +29,10 @@ class AllergiesProvider with ChangeNotifier {
 
   // Getter for error state
   String? get error => _error;
+
+  void setUsername(String username) {
+    _username = username;
+  }
 
   // Service to fetch allergies data
   final AllergiesService _allergiesService = AllergiesService();
@@ -41,8 +47,8 @@ class AllergiesProvider with ChangeNotifier {
       // This will trigger UI updates
       notifyListeners();
 
-      // Fetch allergies using the allergies service
-      _allergies = await _allergiesService.fetchAllergies();
+      // Fetch allergies using the allergies servie
+      _allergies = await _allergiesService.fetchAllergiesForUser(_username ?? '');
 
       // Set loading state to false
       _isLoading = false;

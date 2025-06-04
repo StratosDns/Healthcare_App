@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 
 // Import the dashboard item model to define the structure of dashboard items
 import '../../models/dashboard_item_model.dart';
+import '../screens/main_dashboard_screen.dart';
 
 // DashboardItemTile is a stateless widget that represents a single item in the dashboard list
 // It provides a consistent, styled tile for navigating to different sections of the app
@@ -10,12 +11,14 @@ class DashboardItemTile extends StatelessWidget {
   // The dashboard item to be displayed
   // Contains information like title, icon, count, and screen builder
   final DashboardItemModel item;
+  final String username;
 
   // Constructor with a required dashboard item
   // Uses const for performance optimization
   const DashboardItemTile({
     super.key,
     required this.item,
+    required this.username,
   });
 
   @override
@@ -76,11 +79,12 @@ class DashboardItemTile extends StatelessWidget {
       // Navigation on tap
       onTap: () {
         // Navigate to the screen associated with this dashboard item
+
         Navigator.push(
           context,
           MaterialPageRoute(
             // Use the pageBuilder from the model to create the screen
-            builder: (context) => item.pageBuilder(),
+            builder: (context) => item.pageBuilder(username),
           ),
         );
       },

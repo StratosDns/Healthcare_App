@@ -1,8 +1,11 @@
 // Import necessary Flutter and package dependencies
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:image_picker/image_picker.dart'; // ADD: image picker
+import 'dart:io'; // ADD: for File
 
 // Import the allergies provider for state management
+import '../health_record_service.dart';
 import '../providers/allergies_provider.dart';
 
 // Import the base screen widget for consistent screen layout
@@ -10,87 +13,129 @@ import '../widgets/base_screen.dart';
 
 // AllergiesScreen is a stateful widget to manage screen-specific state
 class AllergiesScreen extends StatefulWidget {
-  // Constructor with optional key
-  const AllergiesScreen({super.key});
+  final String username; // ADD: username parameter
 
-  // Create the mutable state for this widget
+  // CHANGE: Constructor to require username
+  const AllergiesScreen({super.key, required this.username});
+
   @override
   _AllergiesScreenState createState() => _AllergiesScreenState();
 }
 
 // State class for AllergiesScreen
 class _AllergiesScreenState extends State<AllergiesScreen> {
-  // Called when the state object is inserted into the widget tree
+  final ImagePicker _picker = ImagePicker(); // ADD: image picker instance
+
   @override
   void initState() {
     super.initState();
 
-    // Use WidgetsBinding to ensure the widget is built before fetching data
-    // This prevents potential timing issues with provider initialization
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      // Fetch allergies data using the provider
-      // 'listen: false' prevents unnecessary rebuilds
+      // ADD: Set username before fetching data
+      Provider.of<AllergiesProvider>(context, listen: false).setUsername(widget.username);
       Provider.of<AllergiesProvider>(context, listen: false).fetchAllergies();
     });
+  }
+
+  // ADD: Method to handle photo capture
+  Future<void> _addPhotoRecord() async {
+    try {
+      final XFile? pickedFile = await _picker.pickImage(source: ImageSource.camera);
+      if (pickedFile != null) {
+        final file = File(pickedFile.path);
+
+        // Show loading dialog
+        showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (context) => Center(child: CircularProgressIndicator()),
+        );
+
+        await HealthRecordService.saveHealthRecord(
+          file,
+          'Allergies',
+          widget.username,
+        );
+
+        // Close loading dialog
+        Navigator.pop(context);
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Photo saved to Allergies'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Failed to save photo: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     // Use BaseScreen for consistent screen layout
     return BaseScreen(
-      // Screen title
       title: 'Allergies',
+      username: widget.username, // ADD: pass username to BaseScreen
 
-      // Body uses Consumer to listen to AllergiesProvider changes
+      // ADD: Floating action button for camera
+      floatingActionButton: FloatingActionButton(
+        onPressed: _addPhotoRecord,
+        child: const Icon(Icons.camera_alt),
+        tooltip: 'Add Photo',
+      ),
+
       body: Consumer<AllergiesProvider>(
         builder: (context, provider, child) {
-          // Show loading indicator while data is being fetched
           if (provider.isLoading) {
             return const Center(child: CircularProgressIndicator());
           }
 
-          // Display error message if an error occurred during data fetching
           if (provider.error != null) {
             return Center(
               child: Text('Error: ${provider.error}'),
             );
           }
 
-          // Show message if no allergies are found
           if (provider.allergies.isEmpty) {
-            return const Center(
-              child: Text('No allergies found'),
+            return Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.warning_amber_rounded, size: 64, color: Colors.grey),
+                  SizedBox(height: 16),
+                  Text(
+                    'No allergies found',
+                    style: TextStyle(fontSize: 18, color: Colors.grey),
+                  ),
+                  SizedBox(height: 8),
+                  Text(
+                    'Tap the camera button to add a photo',
+                    style: TextStyle(fontSize: 14, color: Colors.grey),
+                  ),
+                ],
+              ),
             );
           }
 
-          // Build a scrollable list of allergy cards
           return ListView.builder(
-            // Add padding around the entire list
             padding: const EdgeInsets.all(16.0),
-
-            // Number of items in the list
             itemCount: provider.allergies.length,
-
-            // Builder method to create each list item
             itemBuilder: (context, index) {
-              // Get the current allergy from the provider
               final allergy = provider.allergies[index];
-
-              // Create a card for each allergy
               return Card(
-                // Add vertical margin between cards
                 margin: const EdgeInsets.symmetric(vertical: 8.0),
-
-                // Add padding inside the card
                 child: Padding(
                   padding: const EdgeInsets.all(16.0),
-
-                  // Column to arrange allergy details vertically
                   child: Column(
-                    // Align content to the start of the column
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // Allergy name with bold styling
                       Text(
                         'Allergy Name: ${allergy.allergyName}',
                         style: const TextStyle(
@@ -98,11 +143,7 @@ class _AllergiesScreenState extends State<AllergiesScreen> {
                           fontSize: 16,
                         ),
                       ),
-
-                      // Add some vertical spacing
                       const SizedBox(height: 8),
-
-                      // Reaction and severity details
                       Text('Reaction: ${allergy.reaction}'),
                       Text('Severity: ${allergy.severity}'),
                     ],
@@ -116,10 +157,3 @@ class _AllergiesScreenState extends State<AllergiesScreen> {
     );
   }
 }
-
-// Key design patterns and principles:
-// 1. Uses Provider for state management
-// 2. Implements loading, error, and empty states
-// 3. Uses BaseScreen for consistent layout
-// 4. Asynchronous data fetching in initState
-// 5. Responsive UI with conditional rendering
